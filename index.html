@@ -137,7 +137,7 @@ canvas#campo{position:absolute;inset:0;width:100%;height:100%;z-index:4;cursor:g
 <div id="ramo-mini"></div>
 <div id="panel">
 <input id="nombre" maxlength="30" value="Fátima Benítez" autocomplete="off">
-<button id="btn-enfocar">📸 Las amarillas</button>
+<button id="btn-enfocar">📸 Amarillas</button>
 <button id="btn-tour">▶ Paseo</button>
 <button id="btn-izq" class="gr">◀</button>
 <button id="btn-der" class="gr">▶</button>
@@ -311,23 +311,27 @@ function crearMundo(){
   const wx=Math.random()*WORLDW,zi=ziOf(wx);
   const id=idParaZona(zi);
   const sp=especieDe(id);
-  const p=Math.pow(Math.random(),1.15);
-  flores.push({wx,y:H*.48+p*H*.52,p,s:(5+p*p*30)*sp.s,fase:Math.random()*6.28,sp,rot:Math.random()*6.28});
+  const p=Math.pow(Math.random(),1.1);
+  const base=isMobile?{a:7,b:40}:{a:5,b:30};
+  flores.push({wx,y:H*.48+p*H*.52,p,s:(base.a+p*p*base.b)*sp.s,fase:Math.random()*6.28,sp,rot:Math.random()*6.28});
  }
  flores.sort((a,b)=>a.wx-b.wx);
- // alfombra: miles de puntitos que llenan el campo hasta el horizonte
+ // alfombra: manto de florecitas con colores reales hasta el horizonte
  alfombra=document.createElement('canvas');
  alfombra.width=Math.max(2,W>>1);alfombra.height=Math.max(2,H>>1);
  const ag=alfombra.getContext('2d');
+ const PAL=[[330,65,66],[48,95,60],[45,35,92],[25,90,56],[280,60,68],[350,70,58],[55,85,62],[300,45,72]];
  const nA=isMobile?3500:8000;
  for(let i=0;i<nA;i++){
   const p=Math.pow(Math.random(),1.6);
   const x=Math.random()*alfombra.width;
   const y=alfombra.height*(0.44+p*0.56);
-  const hue=(Math.random()*360)|0;
-  ag.fillStyle=`hsla(${hue},75%,${55+p*15}%,${.5+p*.5})`;
-  const r2=.6+p*1.8;
+  const cc=PAL[(Math.random()*PAL.length)|0];
+  ag.fillStyle=`hsla(${cc[0]},${cc[1]}%,${cc[2]+p*8}%,${.55+p*.45})`;
+  const r2=.6+p*2;
   ag.beginPath();ag.arc(x,y,r2,0,7);ag.fill();
+  // puntito verde entre flores para que respire el pasto
+  if(Math.random()<.3){ag.fillStyle=`hsla(110,45%,${25+p*20}%,.8)`;ag.beginPath();ag.arc(x+2,y+2,r2*.8,0,7);ag.fill();}
  }
  for(let i=0;i<(isMobile?40:90);i++)hierba.push({x:Math.random(),h:14+Math.random()*30,f:Math.random()*6.28});
 }
