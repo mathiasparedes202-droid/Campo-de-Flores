@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<imagePrompt>
+  <titulo>Campo inmenso de flores silvestres en primavera</titulo>
+  <descripcion><![CDATA[Campo inmenso de flores silvestres en plena primavera, lleno de cosmos rosadas, margaritas blancas, flores amarillas y lavanda púrpura, extendiéndose hasta el horizonte. Atardecer dorado con luz cálida y rayos de sol iluminando los pétalos, cielo espectacular con nubes suaves teñidas de naranja, rosa y violeta. Colinas lejanas y árboles dispersos en el fondo. Colores vibrantes, alta saturación, profundidad de campo cinematográfica, enfoque ultra nítido, fotografía profesional, ultra realista, iluminación natural, detalle extremo en las flores, estilo fotográfico premium, 8K, HDR, paisaje panorámico, composición armoniosa, ambiente mágico y romántico.]]></descripcion>
+  <positive><![CDATA[(masterpiece:1.4), (best quality:1.4), ultra realistic flower meadow, pink cosmos flowers, white daisies, yellow wildflowers, purple lavender, golden sunset, warm sunlight, endless flower field, cinematic lighting, vibrant colors, photorealistic, HDR, depth of field, detailed petals, natural landscape, dreamy atmosphere, professional photography, 8k, sharp focus, breathtaking scenery]]></positive>
+  <negative><![CDATA[blur, low quality, low resolution, dead flowers, wilted flowers, dry grass, fog, dark scene, overexposed, underexposed, artifacts, watermark, text, logo, people, buildings, cars, noise, pixelated, distorted flowers, unrealistic colors]]></negative>
+  <parametros>
+    <calidad>masterpiece, best quality</calidad>
+    <estilo>fotografia profesional, fotorrealista, cinematografico</estilo>
+    <resolucion>8K, HDR</resolucion>
+    <iluminacion>atardecer dorado, luz calida, rayos de sol</iluminacion>
+    <composicion>panoramico, profundidad de campo, horizonte infinito</composicion>
+    <flores>
+      <flor>cosmos rosadas</flor>
+      <flor>margaritas blancas</flor>
+      <flor>flores amarillas silvestres</flor>
+      <flor>lavanda purpura</flor>
+    </flores>
+  </parametros>
+</imagePrompt>

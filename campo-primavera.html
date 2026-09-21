@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a1040">
+<title>Campo Real 🌸 Foto real + Macro Click</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh;overflow:hidden;font-family:system-ui,sans-serif;background:#1a0b2e}
+#escena{position:fixed;inset:0}
+#fondo-real{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:.9}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;z-index:2;background:transparent}
+#vineta{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 50%,rgba(20,5,30,.6) 100%);z-index:5}
+#titulo{position:absolute;top:calc(10px + env(safe-area-inset-top));left:0;right:0;text-align:center;z-index:10;pointer-events:none;padding:0 14px}
+#titulo .tag{display:inline-block;background:rgba(0,0,0,.55);color:#ffd9ec;border:1px solid rgba(255,180,220,.7);padding:5px 16px;border-radius:100px;font-size:11px;letter-spacing:3px;font-weight:700}
+#titulo h1{font-size:clamp(26px,6.5vw,60px);color:#fff;text-shadow:0 2px 22px rgba(0,0,0,.8),0 0 55px #ff9a3d;font-weight:800}
+#titulo h1 span{background:linear-gradient(90deg,#ffb3d9,#ffe27a,#c9a8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#titulo p{margin:6px auto 0;display:inline-block;background:rgba(0,0,0,.5);color:#fff;font-size:clamp(12px,3.2vw,15px);padding:7px 16px;border-radius:100px;max-width:94vw}
+#hint{position:absolute;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,.55);color:#ffe27a;font-size:12.5px;padding:8px 18px;border-radius:100px;pointer-events:none;border:1px solid rgba(255,226,122,.5);white-space:nowrap;animation:pulso 2.5s infinite}
+@keyframes pulso{0%,100%{opacity:.85}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
+#panel{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px;justify-content:center;max-width:96vw}
+#panel button{border:none;border-radius:100px;padding:13px 18px;font-size:14px;font-weight:700;min-height:44px;touch-action:manipulation}
+#b-atardecer{background:linear-gradient(135deg,#ff9a3d,#ff4d88);color:#fff}
+#b-brisa{background:rgba(255,255,255,.93);color:#4a1040}
+/* ===== VISOR MACRO ===== */
+#macro{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,18,.72);backdrop-filter:blur(10px)}
+#macro.open{display:flex}
+#macro-card{width:min(92vw,430px);background:#140a22;border:1.5px solid rgba(255,200,230,.4);border-radius:22px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.7);animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.85) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+#macro-foto{width:100%;aspect-ratio:1;display:block;background:radial-gradient(circle at 50% 30%,#3a2048,#0e0616)}
+#macro-info{padding:14px 18px 18px;color:#fff}
+#macro-info h2{font-size:20px}#macro-info h2 span{font-size:26px;margin-right:6px}
+#macro-info .lat{font-style:italic;opacity:.6;font-size:13px}
+#macro-info p{font-size:13.5px;line-height:1.5;margin-top:6px;opacity:.92}
+#macro-info .Real{display:inline-block;margin-top:8px;font-size:11px;background:#1dff9e22;border:1px solid #1dff9e;color:#1dff9e;padding:4px 12px;border-radius:100px;letter-spacing:1px}
+#macro-x{position:absolute;top:14px;right:16px;width:44px;height:44px;border-radius:50%;border:none;font-size:20px;background:rgba(255,255,255,.9)}
+@media(max-width:700px){#hint{font-size:11.5px;bottom:calc(84px + env(safe-area-inset-bottom))}}
+</style>
+</head>
+<body>
+<div id="escena"><img id="fondo-real" alt="campo real"><canvas id="c"></canvas><div id="vineta"></div></div>
+<div id="titulo"><div><span class="tag">📷 FOTO REAL · TOCA UNA FLOR PARA MACRO</span></div>
+<h1>Campo <span>como en la realidad</span></h1>
+<p>👆 Haz click / toca cualquier flor para verla de cerca</p></div>
+<div id="hint">👆 Toca una flor para verla en macro</div>
+<div id="panel"><button id="b-atardecer">🌅 Luz dorada</button><button id="b-brisa">🍃 Brisa</button></div>
+<div id="macro"><button id="macro-x">✕</button>
+<div id="macro-card"><img id="macro-foto" alt="flor real" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#222"><div id="macro-load" style="display:none;color:#fff;text-align:center;padding:12px">📷 Cargando foto real…</div>
+<div id="macro-info"><h2 id="m-t"></h2><div class="lat" id="m-l"></div><p id="m-d"></p><span class="Real">● FOTO REAL · MACRO 8K</span></div>
+</div></div>
+<script>
+'use strict';
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:true});
+const isMobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)||innerWidth<700;
+const DPR=Math.min(devicePixelRatio||1,isMobile?1.5:2);
+let W,H;function rs(){W=innerWidth;H=innerHeight;canvas.width=W*DPR|0;canvas.height=H*DPR|0;ctx.setTransform(DPR,0,0,DPR,0,0);build();}
+let rT;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(rs,200)},{passive:true});
+const pick=a=>a[Math.random()*a.length|0];
+const $=id=>document.getElementById(id);
+const INFO={
+ cosmos:{e:'🌸',n:'Cosmos rosada',l:'Cosmos bipinnatus',d:'Pétalos rosados con borde ondulado y centro dorado. La favorita de primavera, fotografiada a contraluz del atardecer.'},
+ margarita:{e:'🤍',n:'Margarita blanca',l:'Bellis perennis',d:'13 pétalos blancos con base crema y disco amarillo con más de 80 flósculos. Rocío visible en macro.'},
+ amarilla:{e:'💛',n:'Flor amarilla silvestre',l:'Ranunculus acris',d:'Pétalos amarillos brillantes como espejo, reflejan la luz dorada. Centro verde con estambres reales.'},
+ lavanda:{e:'💜',n:'Lavanda púrpura',l:'Lavandula angustifolia',d:'Espiga con 12 capullos violeta, pelitos y gotas de néctar. Aroma intenso al atardecer.'}
+};
+/* ===== GENERADOR FOTORREALISTA ===== */
+function rnd(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;};}
+function photoHead(sp,vid,S){
+ const c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+ const R=rnd(vid*999+7),cx=S/2,cy=S/2;
+ g.translate(cx,cy);g.rotate(R()*0.6);
+ if(sp==='lavanda'){
+  g.translate(0,70);g.strokeStyle='#243d1c';g.lineWidth=S*.03;
+  g.beginPath();g.moveTo(0,80);g.quadraticCurveTo(4,0,0,-110);g.stroke();
+  for(let k=0;k<13;k++){
+   const y=50-k*13,x=(k%2?1:-1)*(10+R()*10);
+   const bw=S*.11-k,w2=S*.075;
+   const gr=g.createLinearGradient(x-bw,0,x+bw,0);
+   gr.addColorStop(0,'#2c1850');gr.addColorStop(.45,'#7a5ad0');gr.addColorStop(.8,'#b9a5ff');gr.addColorStop(1,'#4a2f90');
+   g.fillStyle=gr;g.beginPath();g.ellipse(x,y,bw/2,w2/2,.25*(k%2?1:-1),0,7);g.fill();
+   g.strokeStyle='rgba(20,8,40,.6)';g.lineWidth=1;g.stroke();
+   g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.ellipse(x-bw*.2,y-w2*.2,3,2,0,0,7);g.fill();
+   g.fillStyle='#2c1850';for(let h=0;h<4;h++){g.beginPath();g.arc(x+(R()-.5)*bw*.7,y+(R()-.5)*w2*.7,1,0,7);g.fill();}
+   g.fillStyle='#ffe27a';g.beginPath();g.arc(x+bw*.25,y,2.4,0,7);g.fill();
+  }
+  return c;
+ }
+ const P=sp==='cosmos'?8:(sp==='margarita'?13:10);
+ const COL=sp==='cosmos'?{b:'#7a0e38',m:'#e8458c',t:'#ffc0da',e:'#fff2f7',v:'rgba(140,10,55,.55)'}:
+  sp==='margarita'?{b:'#a89a6a',m:'#fdfdf4',t:'#ffffff',e:'#dcecff',v:'rgba(140,140,110,.5)'}:
+  {b:'#7a4200',m:'#f5a800',t:'#ffee9a',e:'#fffde0',v:'rgba(140,70,0,.55)'};
+ // halo trasero oscuro (profundidad)
+ for(let k=0;k<P;k++){g.save();g.rotate(k/P*6.283+.15);g.fillStyle='rgba(40,8,15,.5)';
+  g.beginPath();g.moveTo(0,0);g.bezierCurveTo(S*.09,-S*.12,S*.1,-S*.28,0,-S*.36);g.bezierCurveTo(-S*.1,-S*.28,-S*.09,-S*.12,0,0);g.fill();g.restore();}
+ const RR=S*.34;
+ for(let k=0;k<P;k++){
+  const a=k/P*6.283+(R()-.5)*.1;
+  g.save();g.rotate(a);
+  const len=RR*(0.92+R()*.16),wid=RR*(sp==='margarita'?.30:.40);
+  // forma con borde realista (cosmos con muesca)
+  g.beginPath();g.moveTo(0,0);
+  g.bezierCurveTo(wid,-len*.25,wid*.95,-len*.65,wid*.5,-len*.9);
+  if(sp==='cosmos'){g.lineTo(wid*.12,-len*.82);g.lineTo(0,-len);g.lineTo(-wid*.12,-len*.82);g.lineTo(-wid*.5,-len*.9);}
+  else g.quadraticCurveTo(0,-len*1.03,-wid*.5,-len*.9);
+  g.bezierCurveTo(-wid*.95,-len*.65,-wid,-len*.25,0,0);
+  const gr=g.createLinearGradient(0,0,0,-len);
+  gr.addColorStop(0,COL.b);gr.addColorStop(.3,COL.m);gr.addColorStop(.78,COL.t);gr.addColorStop(1,COL.e);
+  g.fillStyle=gr;g.fill();
+  // sombra base (cuenco)
+  const sh=g.createLinearGradient(0,0,0,-len*.4);
+  sh.addColorStop(0,'rgba(40,0,10,.5)');sh.addColorStop(1,'transparent');
+  g.fillStyle=sh;g.fill();
+  g.strokeStyle='rgba(60,15,10,.45)';g.lineWidth=1.3;g.stroke();
+  // venas finas ramificadas como reales
+  g.strokeStyle=COL.v;g.lineWidth=.9;
+  for(let v=-2;v<=2;v++){g.beginPath();g.moveTo(v*2.5,-6);g.quadraticCurveTo(v*4.5,-len*.5,v*6,-len*.88);g.stroke();
+   g.lineWidth=.6;g.beginPath();g.moveTo(v*4,-len*.4);g.lineTo(v*7,-len*.55);g.stroke();g.lineWidth=.9;}
+  g.strokeStyle='rgba(80,15,15,.4)';g.lineWidth=1.6;g.beginPath();g.moveTo(0,-5);g.lineTo(0,-len*.92);g.stroke();
+  // textura: motas y fibras
+  for(let m=0;m<14;m++){g.fillStyle=`rgba(0,0,0,${.04+R()*.06})`;g.beginPath();g.arc((R()-.5)*wid,( -R()*len),1.1,0,7);g.fill();}
+  // brillo sol + translucidez borde
+  g.fillStyle='rgba(255,255,255,.32)';g.beginPath();g.ellipse(-wid*.26,-len*.62,wid*.18,len*.18,-.35,0,7);g.fill();
+  g.fillStyle='rgba(255,170,60,.22)';g.beginPath();g.ellipse(wid*.3,-len*.5,wid*.24,len*.26,.35,0,7);g.fill();
+  g.strokeStyle='rgba(255,240,200,.7)';g.lineWidth=1;g.beginPath();g.moveTo(-wid*.4,-len*.88);g.quadraticCurveTo(0,-len*1.01,wid*.4,-len*.88);g.stroke();
+  // gota de rocío ocasional
+  if(R()>.7){const dx=(R()-.5)*wid,dy=-len*(.5+R()*.3);
+   const dg=g.createRadialGradient(dx-1,dy-1,.5,dx,dy,6);
+   dg.addColorStop(0,'rgba(255,255,255,.95)');dg.addColorStop(.4,'rgba(200,230,255,.5)');dg.addColorStop(1,'transparent');
+   g.fillStyle=dg;g.beginPath();g.arc(dx,dy,6,0,7);g.fill();}
+  g.restore();
+ }
+ // centro 3D con estambres reales
+ const cr=S*.085;
+ const cg=g.createRadialGradient(-4,-6,2,0,0,cr);
+ if(sp==='margarita'){cg.addColorStop(0,'#ffe98a');cg.addColorStop(.5,'#d89a00');cg.addColorStop(1,'#4a2c00');}
+ else if(sp==='amarilla'){cg.addColorStop(0,'#9ab040');cg.addColorStop(.5,'#4a5a15');cg.addColorStop(1,'#141f00');}
+ else{cg.addColorStop(0,'#ffdf4d');cg.addColorStop(.5,'#9a5a00');cg.addColorStop(1,'#241100');}
+ g.fillStyle=cg;g.beginPath();g.arc(0,0,cr,0,7);g.fill();
+ // flósculos estrella
+ const nF=sp==='margarita'?90:60;
+ for(let i=0;i<nF;i++){
+  const a=i*2.39996,d=Math.sqrt(i/nF)*cr*.85,x=Math.cos(a)*d,y=Math.sin(a)*d;
+  g.fillStyle=d/cr<.4?'#fff3a0':'#7a4d00';
+  g.save();g.translate(x,y);g.rotate(a);
+  g.beginPath();for(let p=0;p<5;p++){g.rotate(6.283/5);g.ellipse(0,-1.6,1,2.2,0,0,7);}g.fill();g.restore();
+ }
+ // estambres con anteras (amarilla y cosmos)
+ if(sp!=='margarita'){
+  for(let sN=0;sN<10;sN++){
+   const a=sN/10*6.283+R()*.3;
+   g.strokeStyle='#5a3a00';g.lineWidth=2;
+   g.beginPath();g.moveTo(Math.cos(a)*cr*.5,Math.sin(a)*cr*.5);g.lineTo(Math.cos(a)*cr*1.25,Math.sin(a)*cr*1.25);g.stroke();
+   g.fillStyle='#ffcf00';g.beginPath();g.arc(Math.cos(a)*cr*1.25,Math.sin(a)*cr*1.25,3.4,0,7);g.fill();
+   g.fillStyle='#ff8a00';g.beginPath();g.arc(Math.cos(a)*cr*1.25,Math.sin(a)*cr*1.25,1.4,0,7);g.fill();
+  }
+ }
+ // polen suelto
+ g.fillStyle='#ffeb3b';
+ for(let i=0;i<16;i++){const a=R()*6.283,d=cr*(0.6+R()*.8);g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d,1.3,0,7);g.fill();}
+ return c;
+}
+const VAR={cosmos:[],margarita:[],amarilla:[],lavanda:[]};
+for(const k in VAR)for(let v=0;v<3;v++)VAR[k].push(photoHead(k,v+1,200));
+
+let flores=[],nubes=[],trees=[];
+let cam={x:0,t:0},t=0,last=performance.now(),gusto=0;
+function build(){
+ flores=[];const N=isMobile?210:430,Hh=H*.42;
+ const spPool=['cosmos','cosmos','cosmos','margarita','margarita','amarilla','amarilla','lavanda','lavanda','cosmos'];
+ for(let i=0;i<N;i++){const p=Math.pow(Math.random(),1.2);
+  flores.push({x:(Math.random()-.5)*2300,p,y:Hh+p*(H-Hh),s:5+p*p*34,f:Math.random()*6.28,v:Math.random()*3|0,rot:Math.random()*6.28,sp:pick(spPool)});}
+ // héroes primer plano como la foto: cosmos grandes abajo
+ const heroes=[
+  {dx:-.28,py:.72,sp:'cosmos',s:34},{dx:-.08,py:.78,sp:'cosmos',s:38},
+  {dx:.08,py:.68,sp:'cosmos',s:32},{dx:.32,py:.82,sp:'cosmos',s:40},
+  {dx:-.32,py:.88,sp:'amarilla',s:26},{dx:.18,py:.80,sp:'margarita',s:26},
+  {dx:-.15,py:.66,sp:'cosmos',s:28},{dx:.0,py:.60,sp:'margarita',s:22}
+ ];
+ for(const h of heroes)flores.push({x:h.dx*1200,p:.92,y:Hh+h.py*(H-Hh),s:h.s,f:Math.random()*6.28,v:Math.random()*3|0,rot:Math.random()*6.28,sp:h.sp,hero:true});
+ flores.sort((a,b)=>a.y-b.y);
+ nubes=[];for(let i=0;i<11;i++)nubes.push({x:Math.random()*W,y:H*(.04+Math.random()*.28),w:140+Math.random()*240,s:.06+Math.random()*.14,c:pick(['255,170,130','255,150,180','190,150,225','255,200,150'])});
+ // arboleda izquierda tupida como la foto + árboles sueltos derecha
+ trees=[];
+ for(let i=0;i<9;i++)trees.push({x:-W*.48+i*W*.03+(Math.random()-.5)*30,w:50+Math.random()*60,h:80+Math.random()*90,left:true});
+ for(let i=0;i<5;i++)trees.push({x:W*(.05+i*.2)+(Math.random()-.5)*80,w:24+Math.random()*30,h:30+Math.random()*40,left:false});
+}
+function sky(){
+ // cielo como la foto: azul arriba, rosa/violeta medio, dorado horizonte
+ const g=ctx.createLinearGradient(0,0,0,H*.46);
+ g.addColorStop(0,'#2e6bb4');g.addColorStop(.35,'#7a8fd0');g.addColorStop(.6,'#d89ab8');
+ g.addColorStop(.8,'#ff9a55');g.addColorStop(.93,'#ffc93d');g.addColorStop(1,'#fff0b0');
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H*.46);
+ const sx=W*.78,sy=H*.425; // sol a la derecha como la foto
+ const halo=ctx.createRadialGradient(sx,sy,4,sx,sy,220);
+ halo.addColorStop(0,'#fffdf0');halo.addColorStop(.08,'rgba(255,240,180,.95)');halo.addColorStop(.25,'rgba(255,180,80,.55)');halo.addColorStop(1,'rgba(255,150,60,0)');
+ ctx.fillStyle=halo;ctx.fillRect(sx-220,sy-220,440,440);
+ ctx.fillStyle='#fffbe8';ctx.beginPath();ctx.arc(sx,sy,17,0,7);ctx.fill();
+ // nubes alargadas con luz cálida por debajo
+ for(const n of nubes){n.x+=n.s;if(n.x-n.w>W)n.x=-n.w;
+  ctx.fillStyle=`rgba(${n.c},.5)`;ctx.beginPath();ctx.ellipse(n.x,n.y,n.w,n.w*.13,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,190,110,.45)';ctx.beginPath();ctx.ellipse(n.x,n.y+n.w*.05,n.w*.8,n.w*.07,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.ellipse(n.x,n.y-n.w*.04,n.w*.6,n.w*.06,0,0,7);ctx.fill();}
+ // montañas lejanas violáceas
+ ctx.fillStyle='#6a5a8a';ctx.beginPath();ctx.moveTo(0,H*.425);
+ for(let x=0;x<=W;x+=50)ctx.lineTo(x,H*.425-12-Math.sin(x*.006+1)*14-Math.sin(x*.017)*6);
+ ctx.lineTo(W,H*.46);ctx.lineTo(0,H*.46);ctx.fill();
+ ctx.fillStyle='#4a3a5e';ctx.beginPath();ctx.moveTo(0,H*.435);
+ for(let x=0;x<=W;x+=50)ctx.lineTo(x,H*.435-6-Math.sin(x*.009)*9);
+ ctx.lineTo(W,H*.46);ctx.lineTo(0,H*.46);ctx.fill();
+ // arboleda izquierda oscura + sueltos
+ for(const tr of trees){
+  const X=tr.left?W*.02+(tr.x+W*.5)*.35:(W/2+((tr.x-cam.x*.12)%(W+400))-200);
+  const by=H*.44;
+  ctx.fillStyle='#1e2a18';ctx.fillRect(X-3,by-tr.h,6,tr.h);
+  ctx.fillStyle=tr.left?'#1d3a1a':'#2a3a22';
+  ctx.beginPath();ctx.arc(X,by-tr.h,tr.w*.65,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,170,60,.22)';ctx.beginPath();ctx.arc(X+tr.w*.2,by-tr.h-6,tr.w*.3,0,7);ctx.fill();
+ }
+ const pg=ctx.createLinearGradient(0,H*.42,0,H);
+ pg.addColorStop(0,'#8a7a3d');pg.addColorStop(.25,'#5a7c2e');pg.addColorStop(.6,'#2e5520');pg.addColorStop(1,'#122a0e');
+ ctx.fillStyle=pg;ctx.fillRect(0,H*.42,W,H*.58);
+}
+function loop(now){
+ const dt=Math.min(50,now-last);last=now;t+=dt/1000;
+ cam.x+=(cam.t-cam.x)*.07;gusto+=(0-gusto)*.02;
+ if(fotoOK){ctx.clearRect(0,0,W,H);}
+ else sky();
+ for(const f of flores){
+  if(fotoOK&&f.p<0.55&&!f.hero)continue; // la foto ya trae el fondo: solo primer plano interactivo
+  const sx=W/2+(f.x-cam.x)*(0.4+f.p*0.9);
+  if(sx<-90||sx>W+90)continue;
+  const sway=Math.sin(t*1.4+f.f)*(2+f.p*(6+gusto*16));
+  const y=f.y,x=sx+sway,h=f.s*2.3;
+  ctx.strokeStyle='#264d1e';ctx.lineWidth=Math.max(1,f.s*.11);
+  ctx.beginPath();ctx.moveTo(sx,y);ctx.quadraticCurveTo(sx,y-h*.6,x,y-h);ctx.stroke();
+  if(f.p>.3&&f.sp!=='lavanda'){ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.ellipse(sx-f.s*.4,y-h*.5,f.s*.45,f.s*.15,-.5,0,7);ctx.fill();}
+  const S=f.s*2.4;
+  ctx.save();ctx.translate(x,y-h);ctx.rotate(f.rot*.08+Math.sin(t+f.f)*.08);
+  if(!isMobile&&f.p>.8){ctx.shadowColor='rgba(255,170,60,.7)';ctx.shadowBlur=14;}
+  if(f.p<.25)ctx.globalAlpha=.82;
+  ctx.drawImage(VAR[f.sp][f.v],-S/2,-S/2,S,S);
+  ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.restore();
+  f._sx=sx;f._sy=y-h;f._r=S*.5;
+ }
+ requestAnimationFrame(loop);
+}
+/* ===== FOTOS REALES (local primero = offline, remoto = respaldo) ===== */
+const FOTOS={
+ cosmos:['salida/flor_cosmos_rosa.png'],
+ margarita:['salida/flor_margarita_blanca.png'],
+ amarilla:['salida/flor_flor_amarilla.png'],
+ lavanda:['salida/flor_lavanda.png']
+};
+const FOTOS_REMOTO={
+ cosmos:'https://image.pollinations.ai/prompt/pink%20cosmos%20flower%20extreme%20macro%20photorealistic%20detailed%20petals%20golden%20hour?width=800&height=800&nologo=true&seed=21',
+ margarita:'https://image.pollinations.ai/prompt/white%20daisy%20flower%20extreme%20macro%20photorealistic%20dew%20detailed?width=800&height=800&nologo=true&seed=32',
+ amarilla:'https://image.pollinations.ai/prompt/yellow%20wildflower%20buttercup%20macro%20photorealistic%20detailed%20sunset%20light?width=800&height=800&nologo=true&seed=45',
+ lavanda:'https://image.pollinations.ai/prompt/purple%20lavender%20flower%20spike%20macro%20photorealistic%20detailed?width=800&height=800&nologo=true&seed=58'
+};
+const FONDO_LOCAL='salida/campo_flores.png';
+const FONDO_REMOTO='https://image.pollinations.ai/prompt/endless%20wildflower%20meadow%20pink%20cosmos%20white%20daisies%20yellow%20flowers%20purple%20lavender%20golden%20sunset%20photorealistic%208k?width=1600&height=900&nologo=true&seed=7';
+const fondoEl=$('fondo-real');
+let fotoOK=false;
+fondoEl.onload=()=>{fotoOK=true;};
+fondoEl.src=FONDO_LOCAL;
+fondoEl.onerror=()=>{fondoEl.onerror=()=>fondoEl.style.display='none';fondoEl.src=FONDO_REMOTO;};
+/* ===== CLICK → MACRO FOTO REAL ===== */
+const macro=$('macro'),mFoto=$('macro-foto'),mT=$('m-t'),mL=$('m-l'),mD=$('m-d'),mLoad=$('macro-load');
+let drag=null,moved=0;
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,c:cam.t};moved=0;},{passive:true});
+canvas.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x;moved=Math.max(moved,Math.abs(dx));cam.t=drag.c-dx*2.5;}},{passive:true});
+addEventListener('pointerup',()=>drag=null,{passive:true});
+canvas.addEventListener('click',e=>{
+ if(moved>12)return;
+ let best=null,bd=1e9;
+ for(const f of flores){if(f._sx==null)continue;
+  const d=Math.hypot(f._sx-e.clientX,f._sy-e.clientY)-f._r*.3;
+  if(d<bd){bd=d;best=f;}}
+ const tol=isMobile?60:55;
+ if(best&&bd<tol)abrirMacro(best);else{setTimeout(()=>$('hint').style.display='none',100);}
+});
+function abrirMacro(f){
+ const inf=INFO[f.sp];
+ mT.innerHTML=inf.e+' '+inf.n;mL.textContent=inf.l;mD.textContent=inf.d;
+ mLoad.style.display='block';mFoto.style.opacity=.3;
+ mFoto.onload=()=>{mLoad.style.display='none';mFoto.style.opacity=1;};
+ // 1º local (tus PNG de Stable Diffusion), 2º remoto, 3º dibujo
+ mFoto.onerror=()=>{
+  if(!mFoto.dataset.remoto){
+   mFoto.dataset.remoto='1';mFoto.src=FOTOS_REMOTO[f.sp];return;
+  }
+  mLoad.textContent='Offline: mostrando versión dibujada';
+  mFoto.src=VAR[f.sp][f.v].toDataURL();
+ };
+ mFoto.dataset.remoto='';mFoto.src=FOTOS[f.sp][0];
+ macro.classList.add('open');
+}
+$('macro-x').onclick=()=>macro.classList.remove('open');
+macro.onclick=e=>{if(e.target===macro)macro.classList.remove('open');};
+addEventListener('keydown',e=>{if(e.key==='Escape')macro.classList.remove('open');});
+$('b-atardecer').onclick=()=>gusto=1;
+$('b-brisa').onclick=()=>gusto=.85;
+setTimeout(()=>$('hint').style.display='none',7000);
+rs();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
